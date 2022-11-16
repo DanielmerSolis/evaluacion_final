@@ -6,6 +6,14 @@ import datetime
 import webbrowser
 import os
 import wikipedia
+import cv2
+import uuid
+import pickle
+import os
+from google_auth_oauthlib.flow import flow, InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload, MediaToBaseDownLoad
+from google.auth.transport.requests import Request
 
 horas_invertidas = 20;
 
@@ -70,7 +78,7 @@ def run():
         consulta = recognizer.replace('busca en google', '')
         talk('Buscando en google' + consulta)
         pywhatkit.search(consulta)
-        
+
     #Chistes
     elif 'dime un chiste' in rec:
         talk(pyjokes.get_joke('es'))
@@ -85,27 +93,6 @@ def run():
         talk('Abriendo '+ order)
         app = order+'.exe'
         os.system(app)
-
-    #Creación de directorios
-    elif 'crea el directorio' in rec:
-        home = "C:\Users\Danielmer\Documents\programacion avanzada\momento 3 practica"            
-        order = rec.replace('crea el directorio','')
-
-        if os.path.exists(order):
-            talk("El directorio ya existe")
-
-        else:
-            mrk = os.mkdir(home+order)
-            talk("Se creo el directorio correctamente")
-
-    #Eliminación de directorios
-    elif 'borra el directorio' in rec:
-        order = rec.replace('borra el directorio','')
-        if os.path.exists(order):
-            rd = os.rmdir(order)
-            talk("Se elimino el directorio correctamente")
-        else:
-            talk("El directorio no existe")
 
     #Creación de archivos de texto
     elif 'crea el archivo' in rec:
@@ -132,7 +119,45 @@ def run():
     else:
         talk("No te entendi muy bien, vuelve a intentarlo")
         
+cap = cv2.VideoCapture(0)
 
+leido, frame = cap.read()
+
+if leido == True:
+	nombre_foto = str(uuid.uuid4()) + ".png" # uuid4 regresa un objeto, no una cadena. Por eso lo convertimos
+	cv2.imwrite(nombre_foto, frame)
+	print("Foto tomada correctamente con el nombre {}".format(nombre_foto))
+else:
+	print("Error al acceder a la cámara")
+
+"""
+	Finalmente liberamos o soltamos la cámara
+"""
+cap.release()
+
+from google import Create_Services
+import base64 
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+cliente = "trchatbot.json"
+API_NAME = "gmail"
+API_VERSION = "v1"
+SCOPES = ["https://mail.google.com"]
+
+service = Create_Services(cliente, API_NAME, API_VERSION, SCOPES)
+
+mimeMessage["subject"] = "Evaluacion final programacion avanzada"
+emailMsg = "Buen dia, este es mi trabajo"
+mimeMessage["to"] = "danielmersolis@ustadistancia.edu.co"
+mimeMessage = MIMEMultipart()
+
+mimeMessage.attach(MIMEText(emailMsg, "plain"))
+
+raw_string = base64.urlsafe_b64decode(mimeMessage.as_bytes().decode)
+
+message = service.users().messages().send(userId = "Me", body = {"raw":raw_string}).execute()
+print(message)
 
 #Iniciador
 if __name__ == "__main__":
